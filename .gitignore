@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.sqlite3
+*.db
+.env
+.pytest_cache/
+WIP/
+CLAUDE.md  
+GEMINI.md
