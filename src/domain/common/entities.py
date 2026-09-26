@@ -2,29 +2,31 @@
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-
-
-def _utc_now() -> datetime:
-    """Return the current UTC-aware datetime."""
-    return datetime.now(timezone.utc)
+from datetime import datetime
 
 
 def _new_id() -> str:
-    """Generate a new UUID v4 string."""
-    return str(uuid.uuid4())
+    """Generate a random 32-character hexadecimal UUID v4 string.
+
+    Returns:
+        A 32-character lowercase hex string without hyphens.
+    """
+    return uuid.uuid4().hex
 
 
 @dataclass
 class BaseEntity:
     """Root entity that every domain model inherits from.
 
+    This is a pure Python dataclass with zero database or framework dependencies,
+    strictly adhering to Clean Architecture domain layer isolation.
+
     Attributes:
-        id: Universally unique identifier (UUID v4 string).
-        created_at: UTC timestamp of creation.
-        updated_at: UTC timestamp of the last modification.
+        id: Universally unique identifier (UUID v4 32-character hex string).
+        created_at: UTC timestamp of creation (None before persistence).
+        updated_at: UTC timestamp of last modification (None before persistence).
     """
 
     id: str = field(default_factory=_new_id)
-    created_at: datetime = field(default_factory=_utc_now)
-    updated_at: datetime = field(default_factory=_utc_now)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
