@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 
 app = FastAPI(
-    title="Codoric FastAPI E-Commerce Core",
+    title="FastAPI E-Commerce Core",
     version="0.1.0",
 )
 

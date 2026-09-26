@@ -1,6 +1,6 @@
 """Test configuration and reusable test fixtures.
 
-This file sets up an isolated testing environment for Codoric FastAPI E-Commerce Core:
+This file sets up an isolated testing environment for FastAPI E-Commerce Core:
 - An in-memory SQLite database (sqlite+aiosqlite:///:memory:) that runs entirely in RAM.
 - A `db_session` fixture that creates clean tables before each test and drops them afterward.
 - A `client` fixture that sends asynchronous HTTP requests to our FastAPI app using httpx.
@@ -46,15 +46,15 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     2. During test: yield the active database session.
     3. After test: drop all tables (Base.metadata.drop_all) to leave a clean slate.
     """
-    # Bước 1: Tạo toàn bộ bảng trong CSDL trước khi test bắt đầu
+    # Step 1: Create all tables in the database before the test runs
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # Bước 2: Cung cấp session cho test function sử dụng
+    # Step 2: Provide active session to the test function
     async with TestingSessionLocal() as session:
         yield session
 
-    # Bước 3: Xóa sạch toàn bộ bảng sau khi test xong (dọn dẹp dữ liệu)
+    # Step 3: Drop all tables after the test finishes (clean tear-down)
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
@@ -66,18 +66,18 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     - Uses httpx.AsyncClient with ASGITransport to talk directly to FastAPI in-memory (no network port opened).
     - Overrides the get_db dependency so endpoints use the isolated in-memory test database.
     """
-    # Ghi đè (override) get_db để FastAPI tự động sử dụng test db_session thay vì database thật
+    # Override get_db so FastAPI uses test db_session instead of production database
     async def _override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db_session
 
     app.dependency_overrides[get_db] = _override_get_db
 
-    # ASGITransport cho phép gửi request trực tiếp đến app FastAPI trong RAM mà không cần mở cổng mạng thật
+    # ASGITransport sends requests directly to FastAPI in RAM without opening actual network sockets
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://test",
     ) as ac:
         yield ac
 
-    # Dọn dẹp override để tránh ảnh hưởng đến các bài test khác
+    # Clean up dependency overrides to avoid leaking state into other tests
     app.dependency_overrides.clear()

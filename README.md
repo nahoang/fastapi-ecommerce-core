@@ -1,4 +1,4 @@
-# 🛍️ Codoric FastAPI E-Commerce Core
+# 🛍️ FastAPI E-Commerce Core
 
 > High-performance, domain-driven E-Commerce core engine built with **FastAPI**, **SQLAlchemy 2.0 (Async)**, and **PostgreSQL/SQLite**.
 
@@ -62,7 +62,7 @@ Configuration is managed via `pydantic-settings` and loaded from a `.env` file a
 
 | Variable | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `PROJECT_NAME` | `string` | `Codoric FastAPI E-Commerce Core` | Application name displayed in API documentation |
+| `PROJECT_NAME` | `string` | `FastAPI E-Commerce Core` | Application name displayed in API documentation |
 | `DEBUG` | `boolean` | `true` | Debug mode toggle |
 | `DATABASE_URL` | `string` | `sqlite+aiosqlite:///./ecommerce.db` | Async database connection string |
 | `DATABASE_ECHO` | `boolean` | `true` | Log raw SQL queries to console |
