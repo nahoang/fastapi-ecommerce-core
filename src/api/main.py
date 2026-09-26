@@ -12,8 +12,8 @@ app = FastAPI(
     version=settings.API_VERSION,
 )
 
-# --- 1. Đăng ký Middleware Stack (Thứ tự: CORS -> RequestID -> Logging) ---
-# CORS: Cho phép các trình duyệt / frontend gọi API an toàn
+# --- 1. Register Middleware Stack (Order: CORS -> RequestID -> Logging) ---
+# CORS: Allows frontend clients / browsers to call the API safely
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -22,14 +22,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Request ID: Tự động gán mã định danh duy nhất X-Request-ID cho mọi yêu cầu
+# Request ID: Automatically injects a unique X-Request-ID correlation header
 app.add_middleware(RequestIDMiddleware)
 
-# Request Logging: Ghi log thời gian xử lý và mã trạng thái HTTP
+# Request Logging: Logs response duration and HTTP status codes
 app.add_middleware(RequestLoggingMiddleware)
 
-# --- 2. Đăng ký các bộ xử lý lỗi toàn cục cho ứng dụng ---
+# --- 2. Register Global Exception Handlers ---
 register_exception_handlers(app)
+
 
 
 @app.get("/health", tags=["System"])

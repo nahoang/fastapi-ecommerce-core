@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 async def entity_not_found_handler(request: Request, exc: EntityNotFoundException) -> JSONResponse:
-    """Xử lý lỗi không tìm thấy thực thể (HTTP 404 Not Found)."""
+    """Handle entity not found errors (HTTP 404 Not Found)."""
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content=ErrorResponse(
@@ -34,7 +34,7 @@ async def entity_not_found_handler(request: Request, exc: EntityNotFoundExceptio
 
 
 async def duplicate_entity_handler(request: Request, exc: DuplicateEntityException) -> JSONResponse:
-    """Xử lý lỗi trùng lặp dữ liệu duy nhất như slug, email, SKU (HTTP 409 Conflict)."""
+    """Handle unique constraint violation errors (HTTP 409 Conflict)."""
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content=ErrorResponse(
@@ -45,7 +45,7 @@ async def duplicate_entity_handler(request: Request, exc: DuplicateEntityExcepti
 
 
 async def insufficient_stock_handler(request: Request, exc: InsufficientStockException) -> JSONResponse:
-    """Xử lý lỗi hết hàng hoặc không đủ tồn kho (HTTP 409 Conflict)."""
+    """Handle insufficient stock / inventory exhaustion errors (HTTP 409 Conflict)."""
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content=ErrorResponse(
@@ -56,7 +56,7 @@ async def insufficient_stock_handler(request: Request, exc: InsufficientStockExc
 
 
 async def invalid_operation_handler(request: Request, exc: InvalidOperationException) -> JSONResponse:
-    """Xử lý lỗi thao tác không hợp lệ với trạng thái hiện tại (HTTP 400 Bad Request)."""
+    """Handle invalid operation for current entity state (HTTP 400 Bad Request)."""
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=ErrorResponse(
@@ -67,7 +67,7 @@ async def invalid_operation_handler(request: Request, exc: InvalidOperationExcep
 
 
 async def domain_exception_handler(request: Request, exc: DomainException) -> JSONResponse:
-    """Bộ gom chung (catch-all) cho bất kỳ DomainException nào khác (HTTP 400 Bad Request)."""
+    """Catch-all handler for any other DomainException (HTTP 400 Bad Request)."""
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=ErrorResponse(
@@ -78,10 +78,10 @@ async def domain_exception_handler(request: Request, exc: DomainException) -> JS
 
 
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Bộ xử lý cho các lỗi hệ thống không mong đợi (HTTP 500 Internal Server Error).
+    """Handle unexpected server errors (HTTP 500 Internal Server Error).
 
-    Ghi log chi tiết lỗi ra màn hình máy chủ nhưng trả về thông điệp an toàn cho client,
-    tránh rò rỉ thông tin hạ tầng hoặc mã nguồn nhạy cảm.
+    Logs full traceback for server observability while returning a safe,
+    sanitized message to the client to avoid leaking sensitive internal details.
     """
     logger.exception(f"Unhandled system error occurred on path '{request.url.path}': {exc}")
     return JSONResponse(
@@ -94,10 +94,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    """Đăng ký toàn bộ các bộ xử lý ngoại lệ vào ứng dụng FastAPI.
+    """Register all domain and system exception handlers onto the FastAPI application.
 
-    FastAPI/Starlette sẽ duyệt qua cây kế thừa (MRO) để chọn handler cụ thể nhất
-    trước khi rơi về handler tổng quát.
+    FastAPI and Starlette follow the Method Resolution Order (MRO) to match the most
+    specific exception handler before falling back to generic handlers.
     """
     app.add_exception_handler(EntityNotFoundException, entity_not_found_handler)
     app.add_exception_handler(DuplicateEntityException, duplicate_entity_handler)
@@ -105,3 +105,4 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(InvalidOperationException, invalid_operation_handler)
     app.add_exception_handler(DomainException, domain_exception_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)
+

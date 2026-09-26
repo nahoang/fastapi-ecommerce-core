@@ -17,7 +17,7 @@ from src.domain.common.exceptions import (
 
 @pytest.fixture
 def test_app() -> FastAPI:
-    """Tạo một ứng dụng FastAPI thử nghiệm độc lập đã đăng ký các exception handlers."""
+    """Create an isolated test FastAPI application with registered exception handlers."""
     app = FastAPI()
     register_exception_handlers(app)
 
@@ -28,7 +28,7 @@ def test_app() -> FastAPI:
     @app.get("/test/duplicate")
     async def trigger_duplicate():
         raise DuplicateEntityException(
-            message="Product with slug 'ao-thun' already exists",
+            message="Product with slug 't-shirt' already exists",
             error_code="DUPLICATE_SLUG",
         )
 
@@ -62,7 +62,7 @@ def test_app() -> FastAPI:
 
 @pytest.mark.asyncio
 async def test_entity_not_found_returns_404(test_app: FastAPI) -> None:
-    """Kiểm tra EntityNotFoundException trả về HTTP 404 và ErrorResponse schema."""
+    """Verify that EntityNotFoundException maps to HTTP 404 and ErrorResponse schema."""
     async with AsyncClient(
         transport=ASGITransport(app=test_app),
         base_url="http://test",
@@ -77,7 +77,7 @@ async def test_entity_not_found_returns_404(test_app: FastAPI) -> None:
 
 @pytest.mark.asyncio
 async def test_duplicate_entity_returns_409(test_app: FastAPI) -> None:
-    """Kiểm tra DuplicateEntityException trả về HTTP 409 Conflict."""
+    """Verify that DuplicateEntityException maps to HTTP 409 Conflict."""
     async with AsyncClient(
         transport=ASGITransport(app=test_app),
         base_url="http://test",
@@ -86,13 +86,13 @@ async def test_duplicate_entity_returns_409(test_app: FastAPI) -> None:
 
         assert response.status_code == 409
         data = response.json()
-        assert data["detail"] == "Product with slug 'ao-thun' already exists"
+        assert data["detail"] == "Product with slug 't-shirt' already exists"
         assert data["error_code"] == "DUPLICATE_SLUG"
 
 
 @pytest.mark.asyncio
 async def test_insufficient_stock_returns_409(test_app: FastAPI) -> None:
-    """Kiểm tra InsufficientStockException trả về HTTP 409 Conflict."""
+    """Verify that InsufficientStockException maps to HTTP 409 Conflict."""
     async with AsyncClient(
         transport=ASGITransport(app=test_app),
         base_url="http://test",
@@ -107,7 +107,7 @@ async def test_insufficient_stock_returns_409(test_app: FastAPI) -> None:
 
 @pytest.mark.asyncio
 async def test_invalid_operation_returns_400(test_app: FastAPI) -> None:
-    """Kiểm tra InvalidOperationException trả về HTTP 400 Bad Request."""
+    """Verify that InvalidOperationException maps to HTTP 400 Bad Request."""
     async with AsyncClient(
         transport=ASGITransport(app=test_app),
         base_url="http://test",
@@ -122,7 +122,7 @@ async def test_invalid_operation_returns_400(test_app: FastAPI) -> None:
 
 @pytest.mark.asyncio
 async def test_domain_exception_catchall_returns_400(test_app: FastAPI) -> None:
-    """Kiểm tra DomainException tổng quát (catch-all) trả về HTTP 400 Bad Request."""
+    """Verify that generic DomainException catch-all maps to HTTP 400 Bad Request."""
     async with AsyncClient(
         transport=ASGITransport(app=test_app),
         base_url="http://test",
@@ -137,7 +137,7 @@ async def test_domain_exception_catchall_returns_400(test_app: FastAPI) -> None:
 
 @pytest.mark.asyncio
 async def test_unhandled_exception_returns_500(test_app: FastAPI) -> None:
-    """Kiểm tra ngoại lệ chưa được xử lý trả về HTTP 500 và thông báo an toàn."""
+    """Verify that unhandled server exceptions map to HTTP 500 with sanitized message."""
     async with AsyncClient(
         transport=ASGITransport(app=test_app, raise_app_exceptions=False),
         base_url="http://test",
@@ -151,10 +151,11 @@ async def test_unhandled_exception_returns_500(test_app: FastAPI) -> None:
 
 
 def test_main_app_has_exception_handlers_registered() -> None:
-    """Kiểm tra ứng dụng chính (main_app) đã đăng ký đầy đủ các handler."""
+    """Verify that main_app has registered all required domain exception handlers."""
     assert EntityNotFoundException in main_app.exception_handlers
     assert DuplicateEntityException in main_app.exception_handlers
     assert InsufficientStockException in main_app.exception_handlers
     assert InvalidOperationException in main_app.exception_handlers
     assert DomainException in main_app.exception_handlers
     assert Exception in main_app.exception_handlers
+

@@ -16,7 +16,7 @@ class DomainException(Exception):
     """
 
     def __init__(self, message: str, error_code: str | None = None) -> None:
-        # Gọi super().__init__(message) để Exception trong Python lưu trữ chuỗi mô tả lỗi chuẩn
+        # Call super().__init__(message) so Python's built-in Exception stores standard error message
         super().__init__(message)
         self.message = message
         self.error_code = error_code
