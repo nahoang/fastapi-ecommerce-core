@@ -1,5 +1,6 @@
-"""Common API components, schemas, and response envelopes."""
+"""Common API components, schemas, response envelopes, and exception handlers."""
 
+from src.api.common.exception_handlers import register_exception_handlers
 from src.api.common.schemas import (
     ApiResponse,
     BaseResponseSchema,
@@ -14,4 +15,5 @@ __all__ = [
     "BaseSchema",
     "ErrorResponse",
     "PaginatedResponse",
+    "register_exception_handlers",
 ]
