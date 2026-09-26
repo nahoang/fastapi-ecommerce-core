@@ -38,6 +38,7 @@ def test_settings_default_values() -> None:
     assert settings.DATABASE_ECHO is True
 
     # Check security & authentication settings
+    assert settings.ALLOWED_ORIGINS == ["*"]
     assert settings.SECRET_KEY == "change-me-in-production"
     assert settings.ACCESS_TOKEN_EXPIRE_MINUTES == 30
 

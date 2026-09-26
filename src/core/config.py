@@ -28,7 +28,10 @@ class Settings(BaseSettings):
     # Log raw SQL statements to the terminal to inspect ORM query behavior
     DATABASE_ECHO: bool = True
 
-    # --- 3. Security & Authentication (JWT) ---
+    # --- 3. Security & CORS ---
+    # Allowed origins for Cross-Origin Resource Sharing (CORS)
+    # Default ["*"] allows all origins during local development; restricted in production
+    ALLOWED_ORIGINS: list[str] = ["*"]
     # Secret key used for signing and verifying JWT tokens
     SECRET_KEY: str = "change-me-in-production"
     # Expiration time for access tokens in minutes
