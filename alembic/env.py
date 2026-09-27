@@ -20,12 +20,7 @@ from alembic import context
 from src.core.database import Base, engine
 # Import base mixins/models to register them with Base.metadata
 from src.infrastructure.database.base_model import TimestampMixin  # noqa: F401
-
-# NOTE (Feature 1+): When new ORM models are created (e.g. CategoryModel, ProductModel,
-# OrderModel, UserModel), import them here so that Alembic's `--autogenerate`
-# can detect their schema definitions via Base.metadata.
-# Example:
-# from src.infrastructure.database.models import CategoryModel, ProductModel  # noqa: F401
+from src.infrastructure.catalog.category_model import CategoryModel  # noqa: F401
 
 # Alembic Config object, which provides access to values in alembic.ini
 config = context.config

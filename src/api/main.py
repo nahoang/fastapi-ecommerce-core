@@ -31,6 +31,11 @@ app.add_middleware(RequestLoggingMiddleware)
 # --- 2. Register Global Exception Handlers ---
 register_exception_handlers(app)
 
+# --- 3. Register API Routers ---
+from src.api.v1.categories import router as categories_router
+
+app.include_router(categories_router, prefix="/api/v1")
+
 
 
 @app.get("/health", tags=["System"])
