@@ -13,6 +13,7 @@ from src.infrastructure.database.base_model import TimestampMixin
 
 if TYPE_CHECKING:
     from src.infrastructure.catalog.category_model import CategoryModel
+    from src.infrastructure.catalog.product_variant_model import ProductVariantModel
 
 
 class ProductModel(TimestampMixin, Base):
@@ -79,3 +80,12 @@ class ProductModel(TimestampMixin, Base):
         "src.infrastructure.catalog.category_model.CategoryModel",
         lazy="select",
     )
+
+    # One-to-Many relationship with variants; cascade delete removes variants if product is deleted
+    variants: Mapped[list["ProductVariantModel"]] = relationship(
+        "src.infrastructure.catalog.product_variant_model.ProductVariantModel",
+        back_populates="product",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+

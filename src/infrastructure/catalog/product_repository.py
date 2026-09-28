@@ -6,6 +6,7 @@ extending the generic BaseRepository with product-specific query methods.
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.infrastructure.catalog.product_model import ProductModel
 from src.infrastructure.database.base_repository import BaseRepository
@@ -28,17 +29,61 @@ class ProductRepository(BaseRepository[ProductModel]):
         super().__init__(session, ProductModel)
 
     async def get_by_slug(self, slug: str) -> ProductModel | None:
-        """Retrieve a product by its unique URL-friendly slug.
+        """Retrieve a product by its unique URL-friendly slug, eagerly loading variants.
+
+        Uses selectinload to eagerly fetch associated variants in a single batch query,
+        strictly preventing N+1 queries and avoiding MissingGreenlet errors in async contexts.
 
         Args:
             slug: URL-friendly identifier string (e.g. 'classic-cotton-t-shirt').
 
         Returns:
-            The ProductModel instance if found, or None if no product matches.
+            The ProductModel instance with variants populated, or None if no product matches.
         """
-        stmt = select(ProductModel).where(ProductModel.slug == slug)
+        stmt = (
+            select(ProductModel)
+            .options(selectinload(ProductModel.variants))
+            .where(ProductModel.slug == slug)
+        )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_by_id(self, id: str) -> ProductModel | None:
+        """Retrieve a single product by primary key id, eagerly loading variants.
+
+        Args:
+            id: Unique identifier string of the product.
+
+        Returns:
+            The ProductModel instance with variants populated, or None if not found.
+        """
+        stmt = (
+            select(ProductModel)
+            .options(selectinload(ProductModel.variants))
+            .where(ProductModel.id == id)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def list_all(self, limit: int = 20, offset: int = 0) -> list[ProductModel]:
+        """Retrieve a paginated collection of products, eagerly loading variants.
+
+        Args:
+            limit: Maximum number of records to return (default: 20).
+            offset: Number of records to skip before returning results (default: 0).
+
+        Returns:
+            List of ProductModel instances with variants populated.
+        """
+        stmt = (
+            select(ProductModel)
+            .options(selectinload(ProductModel.variants))
+            .order_by(ProductModel.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
 
     async def count(self) -> int:
         """Count the total number of products currently stored in the database.
@@ -51,3 +96,4 @@ class ProductRepository(BaseRepository[ProductModel]):
         stmt = select(func.count()).select_from(ProductModel)
         result = await self._session.execute(stmt)
         return result.scalar() or 0
+
