@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.common.schemas import ApiResponse, BaseResponseSchema, BaseSchema
 from src.core.database import get_db
+from src.domain.catalog.tree import build_nested_tree
 from src.domain.common.exceptions import (
     DuplicateEntityException,
     EntityNotFoundException,
@@ -96,6 +97,31 @@ class CategoryResponse(BaseResponseSchema):
     is_active: bool
 
 
+class CategoryTreeResponse(BaseResponseSchema):
+    """Hierarchical category response schema with nested children.
+
+    Attributes:
+        id: 32-character hex UUID identifier.
+        name: Category title.
+        slug: Unique URL-safe identifier.
+        parent_id: Parent category ID, or None if root.
+        is_active: Visibility status.
+        created_at: UTC timestamp when the record was created.
+        updated_at: UTC timestamp when the record was last modified.
+        children: Nested list of child category tree nodes.
+    """
+
+    name: str
+    slug: str
+    parent_id: str | None = None
+    is_active: bool = True
+    children: list["CategoryTreeResponse"] = Field(default_factory=list)
+
+
+# Resolve forward references for recursive CategoryTreeResponse model
+CategoryTreeResponse.model_rebuild()
+
+
 # --- API Endpoints ---
 
 
@@ -169,6 +195,76 @@ async def list_categories(
     return ApiResponse(
         data=[CategoryResponse.model_validate(c) for c in categories],
         message="Categories retrieved successfully",
+    )
+
+
+@router.get(
+    "/tree",
+    response_model=ApiResponse[list[CategoryTreeResponse]],
+    status_code=status.HTTP_200_OK,
+    summary="Get nested category tree",
+    description="Retrieve nested category tree structure using Recursive CTE and in-memory tree building.",
+)
+async def get_category_tree(
+    root_id: str | None = Query(
+        default=None,
+        description="Optional category ID or slug to fetch subtree from. If omitted, returns entire tree.",
+    ),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse[list[CategoryTreeResponse]]:
+    """Retrieve nested category tree structure."""
+    repo = CategoryRepository(db)
+
+    # If root_id is provided, resolve category by ID or slug
+    target_root_id: str | None = None
+    if root_id is not None:
+        root_cat = await repo.get_by_id(root_id)
+        if root_cat is None:
+            root_cat = await repo.get_by_slug(root_id)
+        if root_cat is None:
+            raise EntityNotFoundException("Category", root_id)
+        target_root_id = root_cat.id
+
+    # Single-query Recursive CTE to retrieve flat rows of hierarchy
+    flat_categories = await repo.get_tree(root_id=target_root_id)
+
+    # Pure Python O(N) hash map algorithm to construct nested tree
+    nested_tree = build_nested_tree(flat_categories)
+
+    return ApiResponse(
+        data=[CategoryTreeResponse.model_validate(node) for node in nested_tree],
+        message="Category tree retrieved successfully",
+    )
+
+
+@router.get(
+    "/{slug}/breadcrumbs",
+    response_model=ApiResponse[list[CategoryResponse]],
+    status_code=status.HTTP_200_OK,
+    summary="Get category breadcrumbs",
+    description="Retrieve ordered navigation breadcrumbs from root down to the target category.",
+)
+async def get_category_breadcrumbs(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse[list[CategoryResponse]]:
+    """Retrieve breadcrumb trail using an upward Recursive CTE."""
+    repo = CategoryRepository(db)
+
+    # Resolve target category primarily by URL slug, fallback by ID
+    category = await repo.get_by_slug(slug)
+    if category is None:
+        category = await repo.get_by_id(slug)
+
+    if category is None:
+        raise EntityNotFoundException("Category", slug)
+
+    # Query breadcrumbs traversing from child upward to root, ordered root -> leaf
+    breadcrumbs = await repo.get_breadcrumbs(category.id)
+
+    return ApiResponse(
+        data=[CategoryResponse.model_validate(c) for c in breadcrumbs],
+        message="Category breadcrumbs retrieved successfully",
     )
 
 
