@@ -21,6 +21,7 @@ from src.core.database import Base, engine
 # Import base mixins/models to register them with Base.metadata
 from src.infrastructure.database.base_model import TimestampMixin  # noqa: F401
 from src.infrastructure.catalog.category_model import CategoryModel  # noqa: F401
+from src.infrastructure.catalog.product_model import ProductModel  # noqa: F401
 
 # Alembic Config object, which provides access to values in alembic.ini
 config = context.config

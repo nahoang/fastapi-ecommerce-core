@@ -33,8 +33,11 @@ register_exception_handlers(app)
 
 # --- 3. Register API Routers ---
 from src.api.v1.categories import router as categories_router
+from src.api.v1.products import router as products_router
 
 app.include_router(categories_router, prefix="/api/v1")
+app.include_router(products_router, prefix="/api/v1")
+
 
 
 
